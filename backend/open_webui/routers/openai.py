@@ -717,6 +717,22 @@ async def generate_chat_completion(
     payload = {**form_data}
     metadata = payload.pop("metadata", None)
 
+    
+    # DEBUG: Chat ID investigation
+    log.debug(f"=== Chat Completion Request Debug ===")
+    log.debug(f"Headers: {dict(request.headers)}")
+    log.debug(f"Form data keys: {list(form_data.keys())}")
+    log.debug(f"Metadata: {metadata}")
+    log.debug(f"User: {user.name} (ID: {user.id})")
+    
+    # 检查是否有 chat_id 相关的信息
+    chat_id_from_header = request.headers.get("X-OpenWebUI-Chat-Id")
+    chat_id_from_metadata = metadata.get("chat_id") if metadata else None
+    
+    log.debug(f"Chat ID from header: {chat_id_from_header}")
+    log.debug(f"Chat ID from metadata: {chat_id_from_metadata}")
+    log.debug(f"=====================================")
+
     model_id = form_data.get("model")
     model_info = Models.get_model_by_id(model_id)
 
@@ -806,6 +822,9 @@ async def generate_chat_completion(
             convert_logit_bias_input_to_json(payload["logit_bias"])
         )
 
+    # 获取 chat_id，优先从请求头，其次从 metadata
+    chat_id = request.headers.get("x-openwebui-chat-id") or (metadata.get("chat_id") if metadata else None)
+    
     headers = {
         "Content-Type": "application/json",
         **(
@@ -822,16 +841,16 @@ async def generate_chat_completion(
                 "X-OpenWebUI-User-Id": user.id,
                 "X-OpenWebUI-User-Email": user.email,
                 "X-OpenWebUI-User-Role": user.role,
-                **(
-                    {"X-OpenWebUI-Chat-Id": metadata.get("chat_id")}
-                    if metadata and metadata.get("chat_id")
-                    else {}
-                ),
             }
             if ENABLE_FORWARD_USER_INFO_HEADERS
             else {}
         ),
     }
+    
+    # 始终转发 chat_id，不受 ENABLE_FORWARD_USER_INFO_HEADERS 限制
+    if chat_id:
+        headers["X-OpenWebUI-Chat-Id"] = chat_id
+        log.debug(f"✅ Forwarding chat_id to external API: {chat_id}")
 
     if api_config.get("azure", False):
         api_version = api_config.get("api_version", "2023-03-15-preview")
