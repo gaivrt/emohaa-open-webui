@@ -18,6 +18,7 @@
 	export let model = null;
 	export let messages = [];
 	export let onAdd = () => {};
+	export let chatId = null;
 
 	let floatingInput = false;
 
@@ -67,7 +68,7 @@
 				content: message.content
 			})),
 			stream: true // Enable streaming
-		});
+		}, undefined, chatId || undefined);
 
 		if (res && res.ok) {
 			const reader = res.body.getReader();
@@ -147,7 +148,7 @@
 				content: message.content
 			})),
 			stream: true // Enable streaming
-		});
+		}, undefined, chatId || undefined);
 
 		if (res && res.ok) {
 			const reader = res.body.getReader();
