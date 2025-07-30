@@ -1763,7 +1763,9 @@
 						}
 					: {})
 			},
-			`${WEBUI_BASE_URL}/api`
+			`${WEBUI_BASE_URL}/api`,
+			$chatId,
+			$user?.id
 		).catch(async (error) => {
 			toast.error(`${error}`);
 

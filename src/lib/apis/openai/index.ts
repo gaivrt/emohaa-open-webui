@@ -333,18 +333,47 @@ export const verifyOpenAIConnection = async (
 export const chatCompletion = async (
 	token: string = '',
 	body: object,
-	url: string = `${WEBUI_BASE_URL}/api`
+	url: string = `${WEBUI_BASE_URL}/api`,
+	chat_id?: string,
+	user_id?: string
 ): Promise<[Response | null, AbortController]> => {
 	const controller = new AbortController();
 	let error = null;
 
+	// 构建请求头
+	const headers: Record<string, string> = {
+		Authorization: `Bearer ${token}`,
+		'Content-Type': 'application/json'
+	};
+
+	// 如果提供了 chat_id，添加到头部和 body 中
+	if (chat_id) {
+		headers['X-OpenWebUI-Chat-Id'] = chat_id;
+		// 同时在 body 中添加 metadata
+		if (typeof body === 'object' && body !== null) {
+			(body as any).metadata = {
+				...(body as any).metadata,
+				chat_id: chat_id
+			};
+		}
+	}
+
+	// 如果提供了 user_id，添加到头部和 body 中
+	if (user_id) {
+		headers['X-OpenWebUI-User-Id'] = user_id;
+		// 同时在 body 中添加 metadata
+		if (typeof body === 'object' && body !== null) {
+			(body as any).metadata = {
+				...(body as any).metadata,
+				user_id: user_id
+			};
+		}
+	}
+
 	const res = await fetch(`${url}/chat/completions`, {
 		signal: controller.signal,
 		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json'
-		},
+		headers,
 		body: JSON.stringify(body)
 	}).catch((err) => {
 		console.error(err);
@@ -362,16 +391,45 @@ export const chatCompletion = async (
 export const generateOpenAIChatCompletion = async (
 	token: string = '',
 	body: object,
-	url: string = `${WEBUI_BASE_URL}/api`
+	url: string = `${WEBUI_BASE_URL}/api`,
+	chat_id?: string,
+	user_id?: string
 ) => {
 	let error = null;
 
+	// 构建请求头
+	const headers: Record<string, string> = {
+		Authorization: `Bearer ${token}`,
+		'Content-Type': 'application/json'
+	};
+
+	// 如果提供了 chat_id，添加到头部和 body 中
+	if (chat_id) {
+		headers['X-OpenWebUI-Chat-Id'] = chat_id;
+		// 同时在 body 中添加 metadata
+		if (typeof body === 'object' && body !== null) {
+			(body as any).metadata = {
+				...(body as any).metadata,
+				chat_id: chat_id
+			};
+		}
+	}
+
+	// 如果提供了 user_id，添加到头部和 body 中
+	if (user_id) {
+		headers['X-OpenWebUI-User-Id'] = user_id;
+		// 同时在 body 中添加 metadata
+		if (typeof body === 'object' && body !== null) {
+			(body as any).metadata = {
+				...(body as any).metadata,
+				user_id: user_id
+			};
+		}
+	}
+
 	const res = await fetch(`${url}/chat/completions`, {
 		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json'
-		},
+		headers,
 		body: JSON.stringify(body)
 	})
 		.then(async (res) => {

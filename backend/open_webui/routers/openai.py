@@ -822,8 +822,9 @@ async def generate_chat_completion(
             convert_logit_bias_input_to_json(payload["logit_bias"])
         )
 
-    # 获取 chat_id，优先从请求头，其次从 metadata
+    # 获取 chat_id 和 user_id，优先从请求头，其次从 metadata
     chat_id = request.headers.get("x-openwebui-chat-id") or (metadata.get("chat_id") if metadata else None)
+    user_id_from_header = request.headers.get("x-openwebui-user-id") or (metadata.get("user_id") if metadata else None)
     
     headers = {
         "Content-Type": "application/json",
@@ -847,10 +848,16 @@ async def generate_chat_completion(
         ),
     }
     
-    # 始终转发 chat_id，不受 ENABLE_FORWARD_USER_INFO_HEADERS 限制
+    # 始终转发关键信息，不受 ENABLE_FORWARD_USER_INFO_HEADERS 限制
     if chat_id:
         headers["X-OpenWebUI-Chat-Id"] = chat_id
         log.debug(f"✅ Forwarding chat_id to external API: {chat_id}")
+    
+    # 始终转发用户ID，优先使用前端发送的，后备使用JWT用户
+    final_user_id = user_id_from_header or (user.id if user else None)
+    if final_user_id:
+        headers["X-OpenWebUI-User-Id"] = final_user_id
+        log.debug(f"✅ Forwarding user_id to external API: {final_user_id}")
 
     if api_config.get("azure", False):
         api_version = api_config.get("api_version", "2023-03-15-preview")
